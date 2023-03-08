@@ -347,7 +347,7 @@ plot_stability <- function(x) {  # x is the vector of Bootstrap replications
     geom_line(color = "chartreuse4") +
     ggtitle("Stability of Bootstrap Estimate of Standard Error")
 }
-
+# stabilisation happens after 1500
 plot_stability(boot) +
   geom_hline(yintercept = sd(x) / sqrt(n))  # Estimated standard error of the mean
 ```
@@ -404,6 +404,7 @@ set.seed(30)
 n <- 49
 x <- rexp(n)  # Population median is ln(2) / lambda = ln(2)
 
+#same logic for every possible statistic
 boot <- replicate(2000, median(sample(x, replace = TRUE)))
 median(x) + c(-1, 1) * qnorm(0.975) * sd(boot)
 ```
@@ -429,7 +430,7 @@ Compared to the standard normal approach,
 - it is slightly simpler to compute,
 - it is transformation respecting (e.g., using log estimates gives the same CI as log transforming the confidence limits),
 - it is range-preserving (a correlation coefficient should stay within the unit interval),
-- but *more Bootstrap samples* are usually required to get stable results (why?).
+- but *more Bootstrap samples* are usually required to get stable results (why?). (like 10000)
 - Furthermore, it is difficult to give a rigorous explanation of the technique.
 
 ### Example: Percentile CI for the median
@@ -541,7 +542,7 @@ boot.ci(boot_dist)
 - "Normal": Bias corrected version of our standard normal interval.
 - "Basic": Flipped version of the percentile CI. We have not considered it.
 - "Percentile": Percentile confidence interval
-- "BCa": Bias-corrected and accelerated. In theory the most accurate of the four, and thus in practice often the recommended type of interval.
+- "BCa": Bias-corrected and accelerated. In theory the most accurate of the four, and thus in practice often the recommended type of interval. Improved from the percentile method
 
 **Remark on bias correction**: Sometimes, the Bootstrap is also used for bias correction of the estimate $\hat \theta$. We do not consider it here.
 
