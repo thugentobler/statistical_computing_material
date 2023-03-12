@@ -1,0 +1,231 @@
+---
+title: "Exercise Chapter 1"
+author: "Tobias Hugentobler"
+date: "09.03.2023"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    df_print: paged
+    theme: paper
+    code_folding: show
+    math_method: katex
+---
+```{r include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  warning = FALSE,
+  message = FALSE, 
+  fig.height = 5,
+  fig.width = 6,
+  eval = TRUE
+)
+```
+
+## Exercise 1
+
+
+In this exercise, we consider 95%-confidence intervals for the true mean of a uniform distribution.
+
+### a. 
+Generate a sample of 30 observations from the standard uniform distribution and calculate a Student confidence interval for the true mean $\mu$. Interpret it.
+```{r}
+ci <- function(x, se, alpha=0.05, df, method="norm"){
+  
+  mu_hat <- mean(x)
+  if(method == "student"){
+    conf_int = c(mu_hat + -1:1*se*qt(1-alpha/2, degreesOfFreedom))
+  } else if(method == "norm") {
+    conf_int = c(mu_hat + -1:1*se*qnorm(1-alpha/2))
+  }
+  
+  names(conf_int) <- c("lci", "estimate", "uci")
+  return(conf_int)
+}
+```
+
+```{r}
+set.seed(145)
+
+nObs = 30
+alpha = 0.05
+degreesOfFreedom = nObs-1
+x = runif(nObs)
+mu_hat <- mean(x)
+se_hat <- sd(x) / sqrt(nObs)
+
+conf_int <- ci(x, se_hat, df=degreesOfFreedom, method="student")
+conf_int
+
+```
+
+With confidence `r alpha` we can say that the true mean is higher than `r conf_int[1]` and lower than `r conf_int[3]`
+
+
+### b.
+Calculate the Bootstrap estimate of the standard error and compare it with the usual estimate of the standard error. Plot a histogram of the Bootstrap replications. 
+
+```{r}
+library(ggplot2)
+nBoot = 2000
+boot <- replicate(nBoot, mean(sample(x, replace = TRUE)))
+
+se_boot = sd(boot)
+
+ggplot(data.frame(Mean = boot), aes(x = Mean)) +
+  geom_histogram(fill = "gold", bins = 29) +
+  ggtitle("Histogram of Bootstrap replications")
+```
+
+
+
+### c. 
+Use the `plot_stability()` function of the lecture notes to figure out after how many Bootstrap samples the Bootstrap estimate of the standard error would stabilize.
+
+```{r}
+plot_stability <- function(x) {  # x is the vector of Bootstrap replications
+  df <- data.frame(x = x, b = 1:length(x))
+  df$se <- sapply(df$b, function(i) sd(x[1:i]))  # "cumsd"
+
+  ggplot(subset(df, b >= 20), aes(b, se)) +
+    geom_line(color = "gold") +
+    ggtitle("Stability of Bootstrap Estimate of Standard Error")
+}
+# stabilisation happens after 1500
+plot_stability(boot) +
+  geom_hline(yintercept = sd(x) / sqrt(nObs))  # Estimated standard error of the mean
+```
+
+### d.
+Calculate a standard normal Bootstrap CI and a percentile Bootstrap CI for $\mu$. Compare with the interval from 1a.
+
+```{r}
+conf_int_norm = ci(x, se_boot, method="norm")
+conf_int_norm
+conf_int
+
+```
+
+
+## Exercise 2
+
+Consider the two samples $y_1 = 1, 2, \dots, 21$ and $y_2 = 1, 2, \dots, 51$. 
+
+
+```{r}
+y_1 = 1:21
+y_2 = 1:51
+```
+
+### a.
+Resample within groups to calculate a percentile Bootstrap CI for the true median difference $\theta = \text{Med}(y_2) - \text{Med}(y_1)$. Interpret the result.
+
+```{r}
+estimator <- function(y1, y2) {
+  median(y1) - median(y2)
+}
+
+boot <- replicate(
+  9999,
+  estimator(
+    sample(y_1, replace = TRUE), 
+    sample(y_2, replace = TRUE)
+  )
+)
+
+ggplot(data.frame(Estimate = boot), aes(x = Estimate)) +
+  geom_histogram(fill = "gold", bins = 29) +
+  ggtitle("Histogram of the Bootstrap replications")
+
+quantile(boot, c(0.025, 0.975))
+```
+
+Since 0 isn't in the confidence interval, we can drop the null hypothesis that the medians of the two samples is the same (difference = 0)
+
+
+### b.
+Calculate a standard normal Bootstrap CI for $\theta$. Compare the two solutions.
+  
+```{r}
+CI = estimator(y_1, y_2) + c(-1, 1) * qnorm(0.975) * sd(boot)
+names(CI) <- c("2.5%", "97.5%")
+CI
+```
+
+The percentile method gives us integer values and the standardnormal method gives real numbers back. But if rounded they are the samecand give the same conclusion.
+  
+  
+## Exercise 3  
+  
+For the situation in Exercise 1, use simulation to estimate real coverage probabilities of the Student CI and the two types of Bootstrap CIs. What do you observe?
+
+
+```{r}
+nSim = 1000
+nObs = 30
+alpha = 0.05
+degreesOfFreedom = nObs-1
+
+is_ok <- function(ci, theta = log(2)) {
+  (ci[1] <= theta) & (ci[3] >= theta)
+}
+
+
+result <- array(
+  dim = c(3, nSim), 
+  dimnames = list(c("student", "boot_norm", "boot_quantile"), NULL)
+)
+
+if(FALSE){
+  system.time({
+    pb <- txtProgressBar(max = nSim, style = 3)
+    for(i in 1:nSim) {
+    
+      x = runif(nObs)
+      mu_hat <- mean(x)
+      se_hat <- sd(x) / sqrt(nObs)
+      boot <- replicate(9999, mean(sample(x, replace = TRUE)))
+      
+      result["student", i] <- is_ok(ci(x, se_hat, df=degreesOfFreedom, method="student"), theta = 0.5)
+      result["boot_norm", i] <- is_ok(ci(x, sd(boot), method="norm"), theta = 0.5)
+      result["boot_quantile", i] <- is_ok(quantile(boot, c(0.025, 0.5, 0.975), names = FALSE), theta = 0.5)
+      setTxtProgressBar(pb, i)
+    }
+  })
+} else {
+  result <- readRDS("./ci_mean.rds")
+}
+
+(coverage_probs <- apply(result, 1, FUN = mean))
+
+library(tidyverse)
+df <- coverage_probs %>% 
+  data.frame() %>%
+  rownames_to_column(var = "type")
+head(df)
+df %>% 
+  ggplot() +
+    geom_bar(mapping = aes(x = type, y = ., fill = type), stat = 'identity') +
+    geom_hline(yintercept = 0.95, color = "darkgrey") +
+    coord_cartesian(ylim = c(0,1))
+    
+  
+```
+
+
+
+## Exercise 4
+
+Here, we study a test on Spearman's rank correlation.
+    a. What is Spearman's rank correlation?
+    b. Write a function `spearman_test2(x, y, B = 10000)` that calculates a one-sided permutation p value for the null hypothesis of no positive monotonic association. I.e.,
+    you want to show the alternative hypothesis that the true rank correlation is positive.
+    c. Use a simulated example to compare with the corresponding p values from the "coin" package, and also using `stats::cor.test(x, y, method = "s", method = "greater")`.
+    
+
+## Exercise 5
+
+In the situation of Exercise 4: Use simulation to compare your approach with `stats::cor.test()` regarding...
+    a. ... Type 1 error? (Work with independent normal random variables)
+    b. ... power? (Work with dependent normal random variables).
+    c. How do you interpret your result?
