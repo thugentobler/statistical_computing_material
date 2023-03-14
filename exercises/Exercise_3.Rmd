@@ -1,0 +1,64 @@
+---
+title: "Exercise Chapter 3"
+author: "Tobias Hugentobler"
+date: "14.03.2023"
+output:
+  html_document:
+    toc: yes
+    toc_float: yes
+    df_print: paged
+    theme: paper
+    code_folding: show
+    math_method: katex
+---
+```{r include=FALSE}
+knitr::opts_chunk$set(
+  echo = TRUE, 
+  warning = FALSE,
+  message = FALSE, 
+  fig.height = 5,
+  fig.width = 6,
+  eval = TRUE
+)
+```
+
+## Exercise 1
+
+Use the diamonds data to fit a linear regression to model expected price (without logarithm) as a function of "carat" (no log), "color", "clarity", and "cut". Interpret the output of the model. Does it make sense?
+
+For the first four exercises, start with this snippet to turn the ordered factors into unordered ones.
+
+```{r message=FALSE, warning=FALSE, include=FALSE}
+library(tidyverse)
+
+diamonds <- mutate_if(diamonds, is.ordered, factor, ordered = FALSE)
+```
+
+
+```{r}
+model1 <- lm(price ~ carat + color + clarity + cut, diamonds)
+summary(model1)
+```
+The most factors makes sense, but the Color is a bit odd. 
+
+## Exercise 2
+
+Try to improve the model from Exercise 1 by adding interactions between our main predictor "carat" and "color", between "carat" and "cut", and also between "carat" and "clarity". Why could this make sense? How many additional parameters are required? How does the RMSE react?
+
+```{r}
+model2 <- lm(price ~ carat*color + carat*clarity + carat*cut, diamonds)
+summary(model1)
+```
+
+
+## Exercise 3
+
+In the regression in Exercise 1, represent "carat" by a restricted cubic spline with four knots. What is a restricted cubic spline? How much better does the RMSE get? Visualize the effect of "carat". Hint: Restricted cubic splines are available in the R package "splines". 
+
+## Exercise 4
+
+Fit a Gamma regression with log-link to explain diamond prices by "log(carat)", "color", "cut", and "clarity". Compare the coefficients with those of a linear regression having the same covariates, but using "log(price)" as response. Calculate the relative bias of the average prediction. Why isn't it 0?
+
+## Exercise 5
+
+Fit the Gamma GLM of Exercise 4 with H2O, optionally replacing the data preparation with "data.table". Do you get the same results?
