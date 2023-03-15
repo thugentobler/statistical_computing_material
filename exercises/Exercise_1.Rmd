@@ -142,6 +142,8 @@ sieve_of_eratostheses <- function(n){
   return(out)
 }
 
+debugonce(sieve_of_eratostheses)
+sieve_of_eratostheses(23)
 ```
 
 ```{r}

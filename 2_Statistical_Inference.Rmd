@@ -638,7 +638,7 @@ c(cor.test(~ x + y, data = df)$conf.int)
 
 # Estimate
 estimator <- function(X) {
-  cor(X)[1, 2]
+  cor(X)[1, 2] #cor(x) correlation matrix
 }
 (est <- estimator(df))
 
@@ -646,18 +646,18 @@ estimator <- function(X) {
 set.seed(3)
 boot <- replicate(
   9999, 
-  estimator(df[sample(nrow(df), replace = TRUE), ])
-)
+  estimator(df[sample(nrow(df), replace = TRUE), ]) #resampling rows of dataset
+)#table(sample(25, replace= True)) gives 
 
 ggplot(data.frame(Estimate = boot), aes(x = Estimate)) +
   geom_histogram(fill = "chartreuse4", bins = 29) +
   ggtitle("Histogram of the Bootstrap replications")
 
 # Standard normal Bootstrap CI
-est + c(-1, 1) * qnorm(0.975) * sd(boot)
+est + c(-1, 1) * qnorm(0.975) * sd(boot) #upper limit could be bigger than one
 
 # Percentile Bootstrap CI
-quantile(boot, probs = c(0.025, 0.975))
+quantile(boot, probs = c(0.025, 0.975)) #always between zero and one
 ```
 
 **Comment:** The two Bootstrap CIs are similar, but quite different from the normal confidence interval. In this situation, it is difficult to say which interval is the best.
@@ -686,7 +686,7 @@ Let's illustrate above concepts by the two-sample t-test. Under the null hypothe
 ```{r}
 set.seed(8)
 
-m <- 20
+m <- 20 #not paired situation, different sample sizes
 n <- 40
 
 # Values in groups A and B
@@ -703,7 +703,8 @@ boxplot(y ~ x, col = "chartreuse4", varwidth = TRUE)
 # We should actually use the default option var.equal = FALSE
 t.test(y ~ x, var.equal = TRUE)
 
-# Calculate p value "by hand" (why multiply with 2?)
+#standardised mean distance -2.3297
+# Calculate p value "by hand" (why multiply with 2? two sided test)
 2 * (1 - pt(abs(-2.3297), df = m + n - 2))
 ```
 
@@ -756,15 +757,15 @@ y <- c(y1, y2)
 x <- rep(c("A", "B"), times = c(m, n))
 
 statistic <- function(x, y) {
-  abs(mean(y[x == "B"]) - mean(y[x == "A"]))
+  abs(mean(y[x == "B"]) - mean(y[x == "A"])) #easier to calculate p-value if abs()
 }
 
 # Calculate approximate null distribution
 B <- 1e4
-perm_dist <- replicate(B, statistic(sample(x), y))
+perm_dist <- replicate(B, statistic(sample(x), y)) #sample can permute
 
 # p value
-mean(perm_dist >= statistic(x, y))
+mean(perm_dist >= statistic(x, y)) #relative count of cases that are equal or bigger than statistic
 
 # Via "coin" package
 library(coin)
@@ -787,7 +788,7 @@ grid()
 In the last example, we have compared the permutation test with the classic t-test for equal variances. In the specific case, it is difficult to judge which of the two approaches is better. In our artificial example with simulated data, we can use repeated sampling to calculate Type 1 error and power of the two tests.
 
 - Type 1 error: Probability to reject correct $H_0$.
-- Power: Probability to correctly reject wrong $H_0$ (for specific alternative). 1 minus Type 2 error.
+- Power: Probability to correctly reject wrong $H_0$ (for specific given alternative). 1 minus Type 2 error. Depend on something
 
 The Type 1 error should be close to the stated significance level, while the power should be as large as possible.
 
@@ -824,7 +825,7 @@ if (FALSE) {  # Set to TRUE to rerun
     x <- rep(c("A", "B"), times = c(m, n))
 
     # t-tests: First for unequal variances
-    result[i, "Welch"] <- t.test(y ~ x)$p.value <= 0.05
+    result[i, "Welch"] <- t.test(y ~ x)$p.value <= 0.05 #is the p value small?
     result[i, "Student"] <- t.test(y ~ x, var.equal = TRUE)$p.value <= 0.05
     
     # Permutation test with B = 10000
@@ -841,7 +842,7 @@ if (FALSE) {  # Set to TRUE to rerun
 (type_1_error <- readRDS("simulation/type_1_error.rds"))
 
 # Power under a mean shift of 1
-(Power <- readRDS("simulation/Power.rds"))
+(Power <- readRDS("simulation/Power.rds")) #want to maximise, not to a specific value
 ```
 
 **Comment**: In this situation, all tests are somewhat anti-conservative regarding Type 1 error. At the cost of a slightly higher Type 1 error, Welch's t-test has clearly the highest power. The permutation test performs somewhere in the middle.
@@ -877,14 +878,14 @@ wilcox.test(y ~ x)$p.value
 
 # Permutation test
 statistic <- function(x, y) {
-  r <- rank(y)
+  r <- rank(y) #replace y values with their ranks
   abs(mean(r[x == "B"]) - mean(r[x == "A"]))
   # Could also use Wilcoxon's rank-sum statistic
 }
 
-with_seed(
+with_seed( #changes seed only in this brackets
   38,
-  perm_dist <- replicate(1e4, statistic(sample(x), y))
+  perm_dist <- replicate(1e4, statistic(sample(x), y)) #resample one column, not the rows (that would be bootstrap)
 )
 mean(perm_dist >= statistic(x, y))
 

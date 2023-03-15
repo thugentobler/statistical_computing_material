@@ -128,8 +128,8 @@ estimator <- function(y1, y2) {
 boot <- replicate(
   9999,
   estimator(
-    sample(y_1, replace = TRUE), 
-    sample(y_2, replace = TRUE)
+    sample(y_2, replace = TRUE), 
+    sample(y_1, replace = TRUE)
   )
 )
 
@@ -147,7 +147,7 @@ Since 0 isn't in the confidence interval, we can drop the null hypothesis that t
 Calculate a standard normal Bootstrap CI for $\theta$. Compare the two solutions.
   
 ```{r}
-CI = estimator(y_1, y_2) + c(-1, 1) * qnorm(0.975) * sd(boot)
+CI = estimator(y_2, y_1) + c(-1, 1) * qnorm(0.975) * sd(boot)
 names(CI) <- c("2.5%", "97.5%")
 CI
 ```
@@ -166,7 +166,7 @@ nObs = 30
 alpha = 0.05
 degreesOfFreedom = nObs-1
 
-is_ok <- function(ci, theta = log(2)) {
+is_ok <- function(ci, theta = 0.5) { #theta is the true mean
   (ci[1] <= theta) & (ci[3] >= theta)
 }
 
@@ -186,7 +186,7 @@ if(FALSE){
       se_hat <- sd(x) / sqrt(nObs)
       boot <- replicate(9999, mean(sample(x, replace = TRUE)))
       
-      result["student", i] <- is_ok(ci(x, se_hat, df=degreesOfFreedom, method="student"), theta = 0.5)
+      result["student", i] <- is_ok(ci(x, se_hat, df=degreesOfFreedom, method="student"),  theta = 0.5) #c(t.test(x)$conf.int)
       result["boot_norm", i] <- is_ok(ci(x, sd(boot), method="norm"), theta = 0.5)
       result["boot_quantile", i] <- is_ok(quantile(boot, c(0.025, 0.5, 0.975), names = FALSE), theta = 0.5)
       setTxtProgressBar(pb, i)
