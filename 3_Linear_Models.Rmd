@@ -273,6 +273,7 @@ summary(fit)
 ```
 
 Estimates of factor is respect to colorD, the number gives the increase of the price given the color changes from D to the factor.
+R have no logical datatype, therefore every factor is a integer (very inefficient for large number of factors)
 
 **Comments**
 
@@ -308,7 +309,7 @@ The polynomial terms used for modeling look as follows:
 
 ![](figs/cubic.PNG)
 
-```{r}
+```{r
 library(tidyverse)
 
 fit <- lm(price ~ poly(carat, 3), data = diamonds)
@@ -425,6 +426,8 @@ ggplot(to_plot, aes(x = carat, y = price)) +
 
 ```
 
+If the carat goes up by 1%, the price goes up by `r fit$coefficients[2]/100` percent.
+
 **Comments** 
 
 - Indeed, we have fitted a logarithmic relationship between carat and price. The scatterplots (on log-scale and back-transformed to original scale) reveal that this does not make much sense. The model looks wrong. Shouldn't we better take the logarithm of *price*?
@@ -493,6 +496,9 @@ ggplot(to_plot, aes(x = carat, y = price)) +
   ggtitle("Original scale")
 ```
 
+When the carat goes up by 0.1, then the price goes up by `r fit$coefficients[2]*10` percent.
+Strange behavior of the model above carat = 2.
+
 **Comments** 
 
 - **General impression:** The model looks fine until 1.8 carat (both on log-scale and original scale). For larger diamonds, the model is heavily biased.
@@ -533,7 +539,11 @@ ggplot(to_plot, aes(x = carat, y = price)) +
 
 # Relative bias on original scale
 mean(exp(fitted(fit))) / mean(diamonds$price) - 1
+#bias because of the logarithm and the Expectation, which depends on assumptions which are wrong.
 ```
+
+R-squared goes up, but its not fair, since the outliers goes down. Good behavior on the original scale.
+How to interpret? for the original scale, interpret the data as percent, if carat by 1 percent, the price goes up by `r fit$coefficients[2]` percent.
 
 **Comments** 
 
@@ -556,6 +566,8 @@ diamonds <- mutate_if(diamonds, is.ordered, factor, ordered = FALSE)
 fit <- lm(log(price) ~ log(carat) + color + cut + clarity, data = diamonds)
 summary(fit)
 ```
+
+The elasicity went up to `r fit$coefficients[2]`. The color switch goes down monotonically. The better the cut, the higher the price. Clarity from the worst to the best makes sense.
 
 **Comments**
 
