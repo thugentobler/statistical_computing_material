@@ -135,7 +135,7 @@ slope <- coef(fit)[[2]]
 ggplot(diamonds, aes(x = carat, y = price)) + 
   geom_point(alpha = 0.2, shape = ".") +
   coord_cartesian(xlim = c(0, 3), ylim = c(-3000, 20000)) +
-  geom_abline(slope = slope, intercept = intercept, color = "chartreuse4", size = 1)
+  geom_abline(slope = slope, intercept = intercept, color = "chartreuse4", linewidth= 1)
 
 # Predictions for diamonds with 1.3 carat?
 predict(fit, data.frame(carat = 1.3))
@@ -181,14 +181,17 @@ mse <- function(y, pred) {
 }
 
 (MSE <- mse(diamonds$price, predict(fit, diamonds)))
-(RMSE <- sqrt(MSE))
+(RMSE <- sqrt(MSE)) #interpretation: typical error of the model is around this value
 
 empty_model <- lm(price ~ 1, data = diamonds)  # predictions equal mean(diamonds$price)
 MSE_empty <- mse(diamonds$price, predict(empty_model, diamonds))
 
 # R-squared
-(MSE_empty - MSE) / MSE_empty
+(MSE_empty - MSE) / MSE_empty #percent can be explained by the model
 ```
+
+Is the model correct? no, its just a approximation.
+Is the model sufficiently close? no.
 
 **Comments**
 
@@ -268,6 +271,8 @@ diamonds <- transform(diamonds, color = factor(color, ordered = FALSE))
 fit <- lm(price ~ carat + color, data = diamonds)
 summary(fit)
 ```
+
+Estimates of factor is respect to colorD, the number gives the increase of the price given the color changes from D to the factor.
 
 **Comments**
 
