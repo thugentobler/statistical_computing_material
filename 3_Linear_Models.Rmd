@@ -701,7 +701,7 @@ fit <- glm(
 )
 summary(fit)
 
-# Bias on original scale?
+# Bias on original scale? the loglink is the natural link of the poisson family, all other link functions will give a bias
 mean(predict(fit, type = "response")) / mean(dataCar$numclaims) - 1
 ```
 
@@ -817,7 +817,7 @@ dim(df)
 
 setDT(df)
 head(df)
-# fwrite(df, file = "taxi/test.csv") # 767 MB vs. 117 MB Parquet
+# fwrite(df, file = "taxi/test.csv") # 767 MB vs. 117 MB Parquet #fastest csv loader in R
 
 # Data prep
 system.time({  # 5 seconds

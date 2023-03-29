@@ -39,21 +39,30 @@ diamonds <- mutate_if(diamonds, is.ordered, factor, ordered = FALSE)
 model1 <- lm(price ~ carat + color + clarity + cut, diamonds)
 summary(model1)
 ```
-The most factors makes sense, but the Color is a bit odd. 
+The most factors makes sense, but the Color is a bit odd. The worse the color the lower the price, the better the cut, the higher the price. R^2 is 91%, that's not bad
 
 ## Exercise 2
 
 Try to improve the model from Exercise 1 by adding interactions between our main predictor "carat" and "color", between "carat" and "cut", and also between "carat" and "clarity". Why could this make sense? How many additional parameters are required? How does the RMSE react?
 
 ```{r}
-model2 <- lm(price ~ carat*color + carat*clarity + carat*cut, diamonds)
-summary(model1)
+model2 <- lm(price ~ carat * (color + clarity + cut), diamonds)
+summary(model2)
 ```
-
+Params: for each effect of color, clarity an d cut we get a "carat" effect
+RSME: Goes down from 1157 to 1033
 
 ## Exercise 3
 
 In the regression in Exercise 1, represent "carat" by a restricted cubic spline with four knots. What is a restricted cubic spline? How much better does the RMSE get? Visualize the effect of "carat". Hint: Restricted cubic splines are available in the R package "splines". 
+
+```{r}
+library(splines)
+model_splines <- lm(price ~ ns(carat, df = 5) + color + cut + clarity, diamonds)
+summary(model_splines)
+```
+
+Not much better than the model 1, b/c the dependency of carat is almost linear
 
 ## Exercise 4
 
