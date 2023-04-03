@@ -68,6 +68,16 @@ Not much better than the model 1, b/c the dependency of carat is almost linear
 
 Fit a Gamma regression with log-link to explain diamond prices by "log(carat)", "color", "cut", and "clarity". Compare the coefficients with those of a linear regression having the same covariates, but using "log(price)" as response. Calculate the relative bias of the average prediction. Why isn't it 0?
 
+```{r}
+fit <- glm(
+  price ~ log(carat) + color + cut + clarity,
+  data = diamonds, 
+  family = Gamma(link = "log")
+)
+summary(fit)
+```
+
+
 ## Exercise 5
 
 Fit the Gamma GLM of Exercise 4 with H2O, optionally replacing the data preparation with "data.table". Do you get the same results?
