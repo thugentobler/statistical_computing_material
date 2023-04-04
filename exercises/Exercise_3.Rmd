@@ -93,14 +93,19 @@ library(arrow)
 library(data.table)
 library(h2o)
 
-
-# Create single-node Java "cluster" locally on laptop
 h2o.init(min_mem_size = "6G")
 
-# Copy data to cluster
-h2o_df <- as.h2o(df[, c(x, y), with = FALSE])
+diamonds$log_carat = log(diamonds$carat)
+# diamonds$log_price = log(diamonds$price)
+h2o_df <- as.h2o(diamonds)
 
-# Calculations are all done in Java
 summary(h2o_df)
-```
 
+x = c("log_carat", "color", "cut", "clarity")
+
+fit_h2o <- h2o.glm(
+    x, "price", family = "gamma", training_frame = h2o_df, compute_p_values = TRUE, lambda = 0, link = "log"
+  )
+fit_h2o
+```
+Up to rounding errors, its the same output.
