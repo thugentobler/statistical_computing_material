@@ -75,9 +75,32 @@ fit <- glm(
   family = Gamma(link = "log")
 )
 summary(fit)
-```
 
+
+fit2 <- lm(log(price) ~ log(carat) + color + cut + clarity, data = diamonds)
+summary(fit2)
+
+mean(predict(fit, type = "response")) / mean(diamonds$price) - 1
+```
+The coefficients are almost the same. The relative bias of the average prediction is slightly lower than zero, and that's because the prediction has a small error in them, we don't explain the model perfectly
 
 ## Exercise 5
 
 Fit the Gamma GLM of Exercise 4 with H2O, optionally replacing the data preparation with "data.table". Do you get the same results?
+
+```{r}
+library(arrow)
+library(data.table)
+library(h2o)
+
+
+# Create single-node Java "cluster" locally on laptop
+h2o.init(min_mem_size = "6G")
+
+# Copy data to cluster
+h2o_df <- as.h2o(df[, c(x, y), with = FALSE])
+
+# Calculations are all done in Java
+summary(h2o_df)
+```
+
