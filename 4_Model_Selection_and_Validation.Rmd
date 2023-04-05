@@ -62,7 +62,7 @@ What prediction (on logarithmic price scale) would we get with 5-nearest-neighbo
 
 ```{r}
 library(ggplot2)
-library(FNN)
+library(FNN) #very fast implementation of nearest neighbors
 
 diamonds <- transform(diamonds, log_price = log(price), log_carat = log(carat))
 
@@ -70,13 +70,13 @@ y <- "log_price"
 x <- c("log_carat", "color", "cut", "clarity")
 
 # Scaled numeric feature matrix
-X <- scale(data.matrix(diamonds[, x]))
+X <- scale(data.matrix(diamonds[, x])) #data matrix turns factors into integers, scale for std-dev = 1
 
 # The 10'000th observation
 diamonds[10000, c("price", "carat", x)]
 
 # Its prediction
-knn.reg(X, test = X[10000, ], k = 5, y = diamonds[[y]])
+knn.reg(X, test = X[10000, ], k = 5, y = diamonds[[y]]) #prediction for the 10000 diamond. the result has the 10000 diamond in it, which is a clear sign of overfitting. the dataset also includes the same diamonds 
 
 # Its five nearest neighbors
 neighbors <- c(knnx.index(X, X[10000, , drop = FALSE], k = 5))
@@ -145,7 +145,7 @@ pred_train <- knn.reg(X_train, test = X_train, k = 5, y = y_train)$pred
 cat("Training RMSE:", RMSE(y_train, pred_train))
 
 pred_valid <- knn.reg(X_train, test = X_valid, k = 5, y = y_train)$pred
-cat("Validation RMSE:", RMSE(y_valid, pred_valid))
+cat("Validation RMSE:", RMSE(y_valid, pred_valid)) #might be too optimistic, if validation set has 1 and train set has 2 of the same diamonds
 ```
 
 **Comment:** Validation RMSE is substantially worse than training RMSE, a clear sign of overfitting. However, it is still much better than the (full-sample) performance of linear regression (residual standard error was 0.1338).
@@ -179,6 +179,7 @@ pivot_longer(paramGrid, cols = -k, values_to = "RMSE", names_to = "Data") %>%
 ggplot(aes(x = k, y = RMSE, group = Data, color = Data)) +
   geom_point() +
   geom_line()
+# overfitting for smaller values of k
 ```
 
 **Comments**
@@ -230,7 +231,7 @@ y <- "log_price"
 x <- c("log_carat", "color", "cut", "clarity")
 
 # Scaled feature matrix
-X <- scale(data.matrix(diamonds[x]))
+X <- scale(data.matrix(diamonds[x])) #theoretically you should scale the folds seperately
 
 # Split diamonds into folds
 nfolds <- 5
@@ -259,7 +260,7 @@ for (i in 1:nrow(paramGrid)) {
     pred <- knn.reg(X_train, test = X_valid, k = k, y = y_train)$pred
     scores[fold] <- RMSE(y_valid, pred)
   }
-  paramGrid[i, "RMSE"] <- mean(scores)
+  paramGrid[i, "RMSE"] <- mean(scores) #stability by taking the k-th root
 }
 
 # Best CV-scores 
@@ -395,6 +396,8 @@ RMSE(y_test, pred)
 
 - 6-nearest-neighbor regression performs clearly better than linear regression.
 - Its performance on the independent test data is even better than CV suggests.
+- unfair a bit, b/c we used 20 different nearest neighbors, but just 1 linear model.
+- classic way is to validate a model by p-values, but for these kind of models like nearest neighbors you don't have them.
 
 # Excursion: Ridge Regression
 
