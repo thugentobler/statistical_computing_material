@@ -74,15 +74,18 @@ fit <- glm(
   data = diamonds, 
   family = Gamma(link = "log")
 )
-summary(fit)
-
+summary(fit) #one can use a log(price) linear model instead of a gamma with link "log"
+mean(fitted(fit)) / mean(diamonds$price) -1
 
 fit2 <- lm(log(price) ~ log(carat) + color + cut + clarity, data = diamonds)
 summary(fit2)
 
 mean(predict(fit, type = "response")) / mean(diamonds$price) - 1
+
+mean(exp(fitted(fit2))) / mean(diamonds$price) - 1
+contrasts(diamonds$color) #only for kategorical, rows factorlevel, and columns are dummies
 ```
-The coefficients are almost the same. The relative bias of the average prediction is slightly lower than zero, and that's because the prediction has a small error in them, we don't explain the model perfectly
+The coefficients are almost the same. The relative bias of the average prediction is slightly lower than zero, and that's because the prediction has a small error in them, we don't explain the model perfectly. The R squares are very high, therefore the coefficients between the models are similar
 
 ## Exercise 5
 
@@ -104,7 +107,12 @@ summary(h2o_df)
 x = c("log_carat", "color", "cut", "clarity")
 
 fit_h2o <- h2o.glm(
-    x, "price", family = "gamma", training_frame = h2o_df, compute_p_values = TRUE, lambda = 0, link = "log"
+    x, "price", 
+    family = "gamma", 
+    training_frame = h2o_df, 
+    compute_p_values = TRUE, 
+    lambda = 0, #no penalty
+    link = "log"
   )
 fit_h2o
 ```

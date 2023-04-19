@@ -559,12 +559,12 @@ library(tidyverse)
 
 # Initialize virtual DB and register diamonds data
 con = dbConnect(duckdb())
-duckdb_register(con, name = "dia", df = diamonds)
+duckdb_register(con, name = "dia", df = diamonds) #register data into database (not written into it)
 
 # Select every column (and every row)
 con %>% 
   dbSendQuery("SELECT * FROM dia") %>% 
-  dbFetch() %>% 
+  dbFetch() %>% #pass the output of the query back to R
   head()  # See note above
 
 # carat and log(price) sorted by carat in descending order
@@ -585,8 +585,8 @@ query <- "
   FROM dia 
   WHERE 
     carat > 2 
-    AND color = 'E'
-"
+    AND color IN ('E', 'D')
+" #no double quotes, just single quotes
 con %>% 
   dbSendQuery(query) %>% 
   dbFetch() %>% 
@@ -688,7 +688,7 @@ query <- "
   SELECT *
   FROM 'taxi/yellow_tripdata_2018-01.parquet'
   LIMIT 5
-"
+" #limit 5, just the first 5 rows
 con %>% 
   dbSendQuery(query) %>% 
   dbFetch()
@@ -711,7 +711,7 @@ query <- "
   FROM 'taxi/yellow_tripdata_2018-01.parquet'
   GROUP BY PULocationID
   HAVING N >= 100000
-"
+" #HAVING is like WHERE but after aggregation
 con %>% 
   dbSendQuery(query) %>% 
   dbFetch() %>% 
@@ -765,7 +765,7 @@ Let's start a local Spark instance and apply some small queries to the diamond d
 library(tidyverse)
 library(DBI)
 library(sparklyr)
-# spark_install("3.2")
+spark_install("3.2")
 
 # Local Spark instance
 sc <- spark_connect(master = "local")
