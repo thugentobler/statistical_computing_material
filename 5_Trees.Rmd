@@ -66,14 +66,15 @@ library(insuranceData)
 data(dataCar)
 
 fit <- rpart(
-  clm ~ veh_value + veh_body + veh_age + gender + area + agecat, 
+  clm ~ veh_value + veh_body + veh_age + gender + area + agecat, #claims 
   data = dataCar,
   method = "class", 
-  parms = list(split = "information"),
+  parms = list(split = "information"), #"information" <-> binary cross-entropy
   xval = 0,
   cp = -1,
   maxdepth = 3
 )
+#modern algorithms bin the input space to make the fitting faster
 
 prp(fit, type = 2, extra = 7, shadow.col = "gray",
     faclen = 0, box.palette = "auto", branch.type = 4, 
@@ -139,6 +140,8 @@ RMSE <- function(y, pred) {
 }
 
 diamonds <- transform(diamonds, log_price = log(price), log_carat = log(carat))
+#a monotonic transformation on a feature in a decision tree does not change the outcome, since the ranks wont be changed. but if it is binned, this might have an impact
+
 
 # Split diamonds into 80% for "training" and 20% for validation
 with_seed(
@@ -151,7 +154,7 @@ valid <- diamonds[-ix, ]
 
 # Tree without bagging for comparison
 form <- log_price ~ log_carat + clarity + color + cut
-fit_unbagged <- rpart(form, data = train, xval = 0, cp = -1, maxdepth = 8)
+fit_unbagged <- rpart(form, data = train, xval = 0, cp = -1, maxdepth = 8) #relativly deep maxdepth = 8
 rmse_unbagged <- RMSE(valid$log_price, predict(fit_unbagged, valid))
 
 # Fit B models on B bootstrap samples and store their predictions on the validation data
@@ -165,7 +168,8 @@ for (j in 1:B) {
 }
 
 # Very high correlations across models (subset of three models shown)
-round(cor(valid_pred[, 1:3]), 3)
+round(cor(valid_pred[, 1:3]), 3) #there is a benefit of the not full correlation of the models
+#models are highly correlated!!!
 
 # Rowwise successive mean predictions
 pred_bagged <- t(apply(valid_pred, 1, function(z) cumsum(z) / 1:length(z)))
@@ -256,21 +260,22 @@ with_seed(
 
 fit <- ranger(
   reformulate(x, y), 
-  num.trees = 500,
+  num.trees = 500, #very big, 
   data = diamonds[ix, ], 
   importance = "impurity",
   seed = 83
 )
 fit
+#does OOB prediction error and R squared
 
 # Performance on test data
 pred <- predict(fit, diamonds[-ix, ])$predictions
 y_test <- diamonds[-ix, y]
 rmse(y_test, pred)
-r_squared(y_test, pred)
+r_squared(y_test, pred) #~10\% is 2\% is better, but not that much. normaly it is truly better with more trees
 
 # Size of the fitted model
-format(object.size(fit), units = "auto")
+format(object.size(fit), units = "auto") #xgboost models are just around 1mb
 ```
 
 **Comments**
@@ -300,12 +305,12 @@ Approaches that work for *any* supervised model include *permutation importance*
 
 #### Example: Random forest (continued)
 
-Let us study relative split gain importance regarding MSE improvement for the features in our random forest.
+Let us study relative *split gain importance* regarding MSE improvement for the features in our random forest.
 
 ```{r}
 imp <- sort(importance(fit))
 imp <- imp / sum(imp)
-barplot(imp, horiz = TRUE, col = "chartreuse4")
+barplot(imp, horiz = TRUE, col = "chartreuse4") #log_carat: golden feature (decides almost everything)
 ```
 
 **Comment**: As expected, logarithmic carat is by far the most important feature.
@@ -365,7 +370,7 @@ light_ice(fl, v = v, n_max = 200) %>%
 
 light_ice(fl, v = v, n_max = 200, center = "middle") %>% 
   plot(alpha = 0.1, color = "chartreuse4") +
-  labs(title = paste("c-ICE plot for", v), y = "Centered prediction")
+  labs(title = paste("c-ICE plot for", v), y = "Centered prediction") #shifted at a point, remove the vertical spread, tail off effect -> tree based models cannot extrapolate
 
 v <- "clarity"
 light_ice(fl, v = v, n_max = 200) %>% 
@@ -374,7 +379,7 @@ light_ice(fl, v = v, n_max = 200) %>%
 
 light_ice(fl, v = v, n_max = 200, center = "middle") %>% 
   plot(alpha = 0.1, color = "chartreuse4") +
-  labs(title = paste("c-ICE plot for", v), y = "Centered prediction")
+  labs(title = paste("c-ICE plot for", v), y = "Centered prediction") #strong interaction effects
 ```
 
 **Comments**
