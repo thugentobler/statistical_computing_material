@@ -118,10 +118,10 @@ Another way of creating an ensemble model is based on the Bootstrap: *Bagging* (
 **Algorithm: bagging** (for regression)
 
 1. Select $B$ bootstrapped training data sets from the original training data.
-2. Fit models $\hat f^{*j}(\boldsymbol x)$ on them.
+2. Fit a model $\hat f^{*j}(\boldsymbol x)$ on each of them.
 3. Return the bagged model 
   $$
-    \hat f(\boldsymbol x) = \frac{1}{B} \sum_{j = 1}^B \hat f^{*j}(\boldsymbol x)
+    \hat f(\boldsymbol x) = \frac{1}{B} \sum_{j = 1}^B f^{*j}(\boldsymbol x)
   $$
 
 For classification, the last step is replaced by taking averages for each predicted probability or doing majority voting.
@@ -202,7 +202,7 @@ ggplot(aes(`Bagging round`, `Validation RMSE`)) +
 
 ### Bias-Variance Trade-Off
 
-We have mentioned that ensemble models try to reduce variance to improve their test performance. But what does *variance* mean in this context? And why does a smaller variance leads to better test performance? For the MSE as performance measure, we have the following decomposition of the generalization error (@james2021):
+We have mentioned that ensemble models try to reduce variance to improve their test performance. But what does *variance* mean in this context? And why does a smaller variance leads to better test performance? For the MSE as performance measure, we have the following decomposition of the generalization error:
 
 $$
 	\underbrace{\mathbb E(y_o - \hat f(x_o))^2}_{\text{Expected test MSE of } x_o} = \text{Var}(\hat f(x_o)) + \left[\text{Bias}(\hat f(x_o))\right]^2 + \underbrace{\text{Var}(\varepsilon)}_{\text{Irreducible error}},
@@ -222,10 +222,10 @@ To turn a bagged decision tree into a random forest, a second source of randomne
 **Algorithm: random forest** (for regression)
 
 1. Select $B$ bootstrapped training data sets from the original training data.
-2. Fit (usually deep) decision trees $\hat f^{*j}(\boldsymbol x)$ on these. During each split, consider only a random subset of features.
+2. Fit a (usually deep) decision tree $\hat f^{*j}(\boldsymbol x)$ on each of them. During each split, consider only a random subset of features.
 3. Return the model 
   $$
-    \hat f(\boldsymbol x) = \frac{1}{B} \sum_{j = 1}^B \hat f^{*j}(\boldsymbol x).
+    \hat f(\boldsymbol x) = \frac{1}{B} \sum_{j = 1}^B f^{*j}(\boldsymbol x).
   $$
 
 For classification, the last step is again replaced by taking averages for each predicted probability or doing majority voting.
@@ -496,7 +496,7 @@ Does this mean that the update steps in gradient boosting are $\hat f^k = -\lamb
 1. $y_i$ and thus $g_i$ are unknown at prediction stage.
 2. The model should be applicable not only to $\boldsymbol x \in \{\boldsymbol x_1, \dots, \boldsymbol x_n\}$. Rather we would like to apply it to any $\boldsymbol x$.
 
-The solution is to replace $-g_i$ by predictions of a decision tree (or of another base learner) with covariates $\boldsymbol X$. This leads us to the following algorithms (slightly modified from @hastie01statisticallearning):
+The solution is to replace $-g_i$ by predictions of a decision tree (or of another base learner) with covariates $\boldsymbol X$. This leads us to the following algorithm:
 
 **Algorithm: Gradient boosted trees for the squared error loss**
 
@@ -576,13 +576,13 @@ y_valid <- diamonds[-ix, y]
 X_valid <- diamonds[-ix, x]
 
 # XGBoost data interface
-dtrain <- xgb.DMatrix(data.matrix(X_train), label = y_train)
+dtrain <- xgb.DMatrix(data.matrix(X_train), label = y_train) #careful with character values, for prediction the integer encoding needs to be the same! F = 1, M = 2 at training, at prediction, M = 1 -> wrong answer
 dvalid <- xgb.DMatrix(data.matrix(X_valid), label = y_valid)
 
 # Minimal set of parameters
 params <- list(
   learning_rate = 0.1,
-  objective = "reg:squarederror",
+  objective = "reg:squarederror", #loss function
   eval_metric = "rmse"
 )
   
@@ -680,19 +680,20 @@ if (tune) {
     print_every_n = 50
   )
   cvm   # -> a lr of 0.1 provides about 200 trees, which is a convenient amount
-   
+  # to figure out how many rounds we need -> a,round 200, between 100 and 1000, thats ok
+  
   # Final grid search after some iterations
   grid <- expand.grid(
     iteration = NA,
     cv_score = NA,
     train_score = NA,
-    learning_rate = 0.1,
+    learning_rate = 0.1, #now fixed to 0.1
     objective = "reg:squarederror",
     eval_metric = "rmse",
     max_depth = 6:7, 
     min_child_weight = c(1, 10),
-    colsample_bytree = c(0.8, 1), 
-    subsample = c(0.8, 1), 
+    colsample_bytree = c(0.8, 1), #not use all columns in each tree
+    subsample = c(0.8, 1), #not use all rows in each tree
     reg_lambda = c(0, 2.5, 5, 7.5),
     reg_alpha = c(0, 4),
     # tree_method = "hist",   # when data is large
@@ -755,7 +756,7 @@ library(flashlight)
 # Performance on test data
 pred <- predict(fit, data.matrix(X_test))
 rmse(y_test, pred)
-r_squared(y_test, pred, reference_mean = mean(y_train))
+r_squared(y_test, pred, reference_mean = mean(y_train)) #never see such high values in practice
 
 # Variable importance regarding MSE improvement
 imp <- xgb.importance(model = fit)
@@ -848,7 +849,7 @@ if (tune) {
   # Select learning rate so that optimal number of rounds is
   # somewhere between 100 and 1000
   params <- list(
-    learning_rate = 1,
+    learning_rate = 1, #learning rate of 1 seems to makes sense here, b/c of the dataset
     objective = "mse",
     num_threads = 7  # choose number of threads in line with your system
   )
