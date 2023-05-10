@@ -276,6 +276,7 @@ ggplot(aes(x = carat, y = price)) +
 ```
 
 **Comment:** Adding the non-linear activation after the hidden layer has changed the model. The effect of carat is now representing the association between carat and price by a non-linear function.
+Has the same Problem as the trees, cant extrapolate
 
 # Practical Considerations
 
@@ -434,7 +435,7 @@ nn %>% compile(
 # Callbacks
 cb <- list(
   callback_early_stopping(patience = 20),
-  callback_reduce_lr_on_plateau(patience = 5)
+  callback_reduce_lr_on_plateau(patience = 5) #reduce the learning rate if the loss is on a plateau
 )
        
 # Fit model
@@ -461,7 +462,7 @@ fl <- flashlight(
   label = "Neural net", 
   metrics = list(rmse = rmse, `R squared` = r_squared),
   predict_function = function(m, X) 
-    predict(m, prep_nn(X), batch_size = 1000, verbose = 0)
+    predict(m, prep_nn(X), batch_size = 1000, verbose = 0) #need to scale X here as well
 )
 
 # Performance on validation data
